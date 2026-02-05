@@ -2,7 +2,7 @@ import threading
 import time
 import os
 
-from scrapers.pci_scraper import rodar as pci
+from .scrapers.pci_scraper import rodar as pci
 #from scrapers.ifs import rodar as ifsp
 # adicione outros scrapers aqui
 
@@ -22,4 +22,5 @@ def loop_scrapers():
 
 def iniciar_scrapers():
     t = threading.Thread(target=loop_scrapers, daemon=True)
+
     t.start()
