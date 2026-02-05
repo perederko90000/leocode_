@@ -83,7 +83,7 @@ async function buscarDados(salvarNoHistorico = true) {
 
         console.log("DATA COMPLETA:", data);
         console.log("RESULTADOS:", data.results);
-        console.log("LISTA FINAL PARA RENDER:", lista);
+       
 
 
 
@@ -103,6 +103,7 @@ async function buscarDados(salvarNoHistorico = true) {
 
         renderCards(lista);
         renderPaginacao(data.total);
+         console.log("LISTA FINAL PARA RENDER:", lista);
 
         if (salvarNoHistorico) salvarHistorico();
     } catch (e) {
@@ -224,10 +225,10 @@ btnBuscar.onclick = async () => {
     currentPage = 1;
 
     try {
-        // dispara atualização
-      //  await fetch("https://leocode-2.onrender.com/atualizar", {
-         //   method: "POST"
-    //    });
+        dispara atualização
+       await fetch("https://leocode-2.onrender.com/atualizar", {
+   method: "POST"
+       });
 
         // pequena espera (opcional)
         setTimeout(() => {
@@ -244,6 +245,7 @@ btnBuscar.onclick = async () => {
 /* INIT */
 buscarDados();
 carregarHistorico();
+
 
 
 
