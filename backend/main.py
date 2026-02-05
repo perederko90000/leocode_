@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from .init_db import init_db
+
 import sqlite3
 
 app = FastAPI(title="Alerta de Concursos API")
@@ -116,4 +118,7 @@ from .runner import iniciar_scrapers
 
 @app.on_event("startup")
 def start_background_tasks():
+    init_db()
     iniciar_scrapers()
+
+
