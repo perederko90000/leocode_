@@ -3,7 +3,7 @@ import sqlite3
 import re
 from bs4 import BeautifulSoup
 
-from parser import (
+from .parser import (
     extrair_salario,
     extrair_frequencia,
     detectar_cargo,
@@ -126,3 +126,4 @@ def rodar():
 
 if __name__ == "__main__":
     rodar()
+
