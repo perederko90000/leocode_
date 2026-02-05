@@ -1,4 +1,4 @@
-alert("APP.JS CARREGOU");
+
 const API_URL = "https://leocode-2.onrender.com/dados";
 
 /* ELEMENTOS */
@@ -244,6 +244,7 @@ btnBuscar.onclick = async () => {
 /* INIT */
 buscarDados();
 carregarHistorico();
+
 
 
 
