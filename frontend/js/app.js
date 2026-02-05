@@ -70,7 +70,7 @@ async function buscarDados(salvarNoHistorico = true) {
 
     if (searchInput.value) params.append("q", searchInput.value);
     if (ambitoFilter.value) params.append("ambito", ambitoFilter.value);
-    if (frequenciaFilter.value) params.append("frequencia", frequenciaFilter.value);
+    
     if (cargoFilter.value) params.append("cargo", cargoFilter.value);
     if (salarioMinInput.value) params.append("salario_min", salarioMinInput.value);
 
@@ -81,7 +81,11 @@ async function buscarDados(salvarNoHistorico = true) {
         const res = await fetch(`${API_URL}?${params.toString()}`);
         const data = await res.json();
 
-        console.log("DATA RECEBIDA DA API:", data);
+        console.log("DATA COMPLETA:", data);
+        console.log("RESULTADOS:", data.results);
+        console.log("LISTA FINAL PARA RENDER:", lista);
+
+
 
         let lista = data.results.map(i => ({
             ...i,
@@ -240,6 +244,7 @@ btnBuscar.onclick = async () => {
 /* INIT */
 buscarDados();
 carregarHistorico();
+
 
 
 
