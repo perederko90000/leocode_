@@ -117,11 +117,18 @@ def listar(
     }
 from .runner import iniciar_scrapers
 
+from fastapi import BackgroundTasks
+
+@app.post("/atualizar")
+def atualizar(background_tasks: BackgroundTasks):
+    background_tasks.add_task(iniciar_scrapers)
+    return {"status": "Atualização iniciada"}
 
 @app.on_event("startup")
 def start_background_tasks():
     init_db()
     iniciar_scrapers()
+
 
 
 
