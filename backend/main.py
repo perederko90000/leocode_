@@ -111,7 +111,8 @@ def listar(
             if salario_num(r[3]) >= salario_min
         ]
     }
-from runner import iniciar_scrapers
+from .runner import iniciar_scrapers
+
 
 @app.on_event("startup")
 def start_background_tasks():
