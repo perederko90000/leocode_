@@ -213,12 +213,29 @@ function carregarHistorico() {
 
 /* ===================== EVENTOS ===================== */
 
-btnBuscar.onclick = () => {
+btnBuscar.onclick = async () => {
     currentPage = 1;
-    buscarDados();
+
+    try {
+        // dispara atualização
+        await fetch("https://leocode-2.onrender.com/atualizar", {
+            method: "POST"
+        });
+
+        // pequena espera (opcional)
+        setTimeout(() => {
+            buscarDados();
+        }, 2000);
+
+    } catch (e) {
+        console.error("Erro ao atualizar:", e);
+        buscarDados(); // fallback
+    }
 };
+
 
 /* INIT */
 buscarDados();
 carregarHistorico();
+
 
