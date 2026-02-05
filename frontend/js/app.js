@@ -80,6 +80,8 @@ async function buscarDados(salvarNoHistorico = true) {
         const res = await fetch(`${API_URL}?${params.toString()}`);
         const data = await res.json();
 
+        console.log("DATA RECEBIDA DA API:", data);
+
         let lista = data.results.map(i => ({
             ...i,
             score: calcularScore(i)
@@ -237,5 +239,6 @@ btnBuscar.onclick = async () => {
 /* INIT */
 buscarDados();
 carregarHistorico();
+
 
 
