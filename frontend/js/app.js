@@ -225,7 +225,7 @@ btnBuscar.onclick = async () => {
     currentPage = 1;
 
     try {
-        dispara atualização
+        
        await fetch("https://leocode-2.onrender.com/atualizar", {
    method: "POST"
        });
@@ -245,6 +245,7 @@ btnBuscar.onclick = async () => {
 /* INIT */
 buscarDados();
 carregarHistorico();
+
 
 
 
