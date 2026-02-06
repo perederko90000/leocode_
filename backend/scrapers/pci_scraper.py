@@ -8,7 +8,8 @@ from ..parser import (
     extrair_frequencia,
     detectar_cargo,
     detectar_ambito,
-    extrair_datas
+    extrair_datas,
+    detectar_status  # 🔒 NOVO: filtro de abertos / previstos
 )
 
 BASE_URL = "https://www.pciconcursos.com.br"
@@ -21,8 +22,10 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
 
+
 def limpar_texto(t):
     return re.sub(r"\s+", " ", t).strip()
+
 
 def normalizar_link(href: str) -> str | None:
     if not href:
@@ -30,19 +33,17 @@ def normalizar_link(href: str) -> str | None:
 
     href = href.strip()
 
-    # Corrige casos tipo "https//site.com"
     if href.startswith("https//"):
         href = href.replace("https//", "https://", 1)
 
-    # Link absoluto válido
     if href.startswith("http://") or href.startswith("https://"):
         return href
 
-    # Link relativo
     if href.startswith("/"):
-        return "https://www.pciconcursos.com.br" + href
+        return BASE_URL + href
 
     return None
+
 
 def rodar():
     conn = sqlite3.connect("dados.db")
@@ -52,29 +53,35 @@ def rodar():
 
     for url in URLS:
         print(f"🔍 Acessando: {url}")
+
         r = requests.get(url, headers=HEADERS, timeout=30)
         r.raise_for_status()
 
         soup = BeautifulSoup(r.text, "lxml")
         blocos = soup.select(".ca")
+
         print(f"📦 Blocos encontrados: {len(blocos)}")
 
         for bloco in blocos:
             texto = limpar_texto(bloco.get_text(" ", strip=True))
-            if len(texto) < 30:
+            if len(texto) < 40:
                 continue
+
+            # 🔒 FILTRO PRINCIPAL (parser decide)
+            status = detectar_status(texto)
+            if not status:
+             continue
+
 
             a = bloco.find("a", href=True)
             if not a:
                 continue
 
-            href = str(a.get("href"))
-            link = normalizar_link(href)
-
+            link = normalizar_link(str(a.get("href")))
             if not link:
-                    continue
+                continue
 
-            # evita duplicar
+            # evita duplicidade
             cursor.execute(
                 "SELECT 1 FROM publicacoes WHERE link = ?",
                 (link,)
@@ -89,7 +96,6 @@ def rodar():
             datas = extrair_datas(texto)
 
             data_inscricao = datas[0] if datas else None
-
             instituicao = texto[:180]
 
             cursor.execute("""
@@ -124,7 +130,6 @@ def rodar():
     conn.close()
     print(f"\n🏁 PCI finalizado. Total inserido: {inseridos}")
 
+
 if __name__ == "__main__":
     rodar()
-
-
