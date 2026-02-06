@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 # ===============================
 # STATUS (PCI REAL)
 # ===============================
+from datetime import datetime
 
 def detectar_status(texto: str) -> str | None:
     t = texto.lower()
@@ -22,9 +23,20 @@ def detectar_status(texto: str) -> str | None:
     ]):
         return None
 
-    # 🟢 ABERTO → padrão PCI
+    # 🟢 ABERTO → verificar data de inscrição
     if "inscrição até" in t:
-        return "aberto"
+        datas = re.findall(r"\d{2}/\d{2}/\d{4}", t)
+        if datas:
+            try:
+                data_fim = datetime.strptime(datas[0], "%d/%m/%Y").date()
+                hoje = datetime.today().date()
+
+                if data_fim >= hoje:
+                    return "aberto"
+                else:
+                    return None  # ⛔ inscrição vencida
+            except:
+                return None
 
     # 🟡 PREVISTO → concurso sem data
     if any(p in t for p in [
@@ -37,6 +49,7 @@ def detectar_status(texto: str) -> str | None:
         return "previsto"
 
     return None
+
 
 
 # ===============================
@@ -167,3 +180,4 @@ def detectar_ambito(instituicao: str, link: str | None = None) -> str:
         return "Municipal"
 
     return "Federal"
+
