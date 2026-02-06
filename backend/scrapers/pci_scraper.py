@@ -14,9 +14,9 @@ from ..parser import (
 
 BASE_URL = "https://www.pciconcursos.com.br"
 URLS = [
-    "https://www.pciconcursos.com.br/concursos/"
+    "https://www.pciconcursos.com.br/concursos/",
     "https://www.pciconcursos.com.br/concursos/educacao/",
-    "https://www.pciconcursos.com.br/concursos/administracao/"
+    "https://www.pciconcursos.com.br/concursos/administracao/",
 ]
 
 
@@ -135,4 +135,5 @@ def rodar():
 
 if __name__ == "__main__":
     rodar()
+
 
