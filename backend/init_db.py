@@ -16,6 +16,7 @@ def init_db():
             frequencia TEXT,
             local TEXT,
             data_inscricao TEXT,
+            status TEXT,              -- 🟢 NOVO CAMPO
             fonte TEXT,
             link TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
