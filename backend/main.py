@@ -12,24 +12,22 @@ from .runner import iniciar_scrapers
 app = FastAPI(title="Alerta de Concursos API")
 
 # ===============================
-# CORS (DEFINITIVO)
+# CORS (DEFINITIVO E SEM DOR DE CABEÇA)
 # ===============================
+# ⚠️ Render muda domínio, Vercel muda domínio
+# 👉 Em produção inicial, o correto é liberar tudo
+# 👉 Depois você pode restringir se quiser
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://leocode.vercel.app",
-        "https://leocode-ppuonfxot-perederko90000s-projects.vercel.app",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],       # 🔥 resolve Render + Vercel
+    allow_credentials=False,   # obrigatório com "*"
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ===============================
-# HEALTH CHECK (OBRIGATÓRIO)
+# HEALTH CHECK
 # ===============================
 
 @app.get("/ping")
@@ -40,7 +38,7 @@ def ping():
 # HELPERS
 # ===============================
 
-def salario_num(v):
+def salario_num(v: str) -> int:
     try:
         return int(
             v.replace("R$", "")
@@ -119,7 +117,8 @@ def listar(
         params.append(cargo)
 
     query += f" ORDER BY {order_sql} LIMIT ? OFFSET ?"
-    params.extend([limit, offset])
+    params.append(limit)
+    params.append(offset)
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
