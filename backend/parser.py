@@ -29,10 +29,47 @@ PALAVRAS_EXCLUIDAS = [
 ]
 
 
-INSTITUICOES_ESTADUAIS_FIXAS = [
-    "secretaria de educação",
-    "secretaria estadual de educação"
+KEYWORDS_ABERTOS = [
+    "inscrições abertas",
+    "inscrições até",
+    "período de inscrição",
+    "edital aberto",
+    "concurso aberto",
+    "processo seletivo aberto"
 ]
+
+KEYWORDS_PREVISTOS = [
+    "previsto",
+    "concurso previsto",
+    "autorizado",
+    "aguardando edital"
+]
+
+KEYWORDS_IGNORAR = [
+    "encerrado",
+    "resultado",
+    "gabarito",
+    "homologado",
+    "classificação",
+    "convocação",
+    "nomeação",
+    "retificação",
+    "comunicado"
+]
+
+def detectar_status(texto: str) -> str | None:
+    t = texto.lower()
+
+    if any(p in t for p in KEYWORDS_IGNORAR):
+        return None
+
+    if any(p in t for p in KEYWORDS_ABERTOS):
+        return "aberto"
+
+    if any(p in t for p in KEYWORDS_PREVISTOS):
+        return "previsto"
+
+    return None
 
 def extrair_salario(texto):
     m = re.search(r"r\$ ?[\d\.]+,\d{2}", texto.lower())
