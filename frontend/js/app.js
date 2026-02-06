@@ -1,4 +1,7 @@
-const API_URL = "https://leocode-2.onrender.com";
+const API_BASE = "https://leocode.onrender.com";
+
+fetch(`${API_BASE}/dados?page=1&limit=9`)
+
 
 /* ELEMENTOS */
 const searchInput = document.getElementById("searchInput");
@@ -244,6 +247,7 @@ btnBuscar.onclick = async () => {
 /* INIT */
 buscarDados();
 carregarHistorico();
+
 
 
 
