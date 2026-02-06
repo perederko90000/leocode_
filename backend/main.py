@@ -7,15 +7,24 @@ from .runner import iniciar_scrapers
 
 app = FastAPI(title="Alerta de Concursos API")
 
-# CORS (liberado)
+# 🔒 CORS — DEFINITIVO
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=[
+        "https://leocode.vercel.app",
+        "https://leocode-ppuonfxot-perederko90000s-projects.vercel.app",
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# 🔎 TESTE DE VIDA (IMPORTANTE)
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
 
 def salario_num(v):
     try:
@@ -141,3 +150,4 @@ def atualizar(background_tasks: BackgroundTasks):
 def start_background_tasks():
     init_db()
     iniciar_scrapers()
+
