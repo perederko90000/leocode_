@@ -95,8 +95,7 @@ def rodar():
             if not link:
                 continue
 
-            if "/noticias/" in link:
-                continue
+          
 
             cursor.execute("SELECT 1 FROM publicacoes WHERE link = ?", (link,))
             if cursor.fetchone():
@@ -147,4 +146,5 @@ def rodar():
 
 if __name__ == "__main__":
     rodar()
+
 
