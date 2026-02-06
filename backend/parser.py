@@ -9,6 +9,7 @@ from datetime import datetime
 
 def detectar_status(texto: str) -> str | None:
     t = texto.lower()
+    hoje = datetime.today().date()
 
     # ❌ descartes absolutos
     if any(p in t for p in [
@@ -24,22 +25,23 @@ def detectar_status(texto: str) -> str | None:
     ]):
         return None
 
-    hoje = datetime.today().date()
+    # 🔎 extrair TODAS as datas
+    datas = re.findall(r"\d{2}/\d{2}/\d{4}", t)
 
-    # 🟢 ABERTO → somente se existir "inscrição até" com data futura
-    m = re.search(r"inscri[cç][aã]o até[: ]+(\d{2}/\d{2}/\d{4})", t)
-    if m:
+    if datas:
         try:
-            data_fim = datetime.strptime(m.group(1), "%d/%m/%Y").date()
+            # pega a MAIOR data (pra evitar data antiga de publicação)
+            data_fim = max(
+                datetime.strptime(d, "%d/%m/%Y").date()
+                for d in datas
+            )
+
             if data_fim >= hoje:
                 return "aberto"
-            return None
+            else:
+                return None
         except:
             return None
-
-    # ❌ se existir QUALQUER data mas não for inscrição → ignorar
-    if re.search(r"\d{2}/\d{2}/\d{4}", t):
-        return None
 
     # 🟡 PREVISTO → somente se NÃO existir data nenhuma
     if any(p in t for p in [
@@ -157,3 +159,4 @@ def detectar_ambito(instituicao: str, link: str | None = None) -> str:
         return "Municipal"
 
     return "Federal"
+
