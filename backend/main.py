@@ -1,6 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import BackgroundTasks
 import sqlite3
 
 from .init_db import init_db
@@ -8,7 +7,7 @@ from .runner import iniciar_scrapers
 
 app = FastAPI(title="Alerta de Concursos API")
 
-# CORS
+# CORS (liberado)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,7 +34,7 @@ def listar(
     q: str = "",
     ambito: str = "",
     cargo: str = "",
-    status: str = "",          # 🟢 NOVO
+    status: str = "aberto",   # 🔒 default = aberto
     salario_min: int = 0,
     ordenacao: str = "",
     page: int = 1,
@@ -46,6 +45,7 @@ def listar(
     conn = sqlite3.connect("dados.db")
     cursor = conn.cursor()
 
+    # ORDENACAO
     order_sql = "created_at DESC"
 
     if ordenacao == "salario":
@@ -63,7 +63,8 @@ def listar(
             END ASC
         """
 
-    query = f"""
+    # QUERY BASE (STATUS APLICADO)
+    query = """
         SELECT
             instituicao,
             cargo,
@@ -76,9 +77,9 @@ def listar(
             fonte,
             link
         FROM publicacoes
-        WHERE 1=1
+        WHERE status = ?
     """
-    params = []
+    params = [status]
 
     if q:
         query += " AND instituicao LIKE ?"
@@ -92,17 +93,17 @@ def listar(
         query += " AND cargo = ?"
         params.append(cargo)
 
-    if status:
-        query += " AND status = ?"
-        params.append(status)
-
     query += f" ORDER BY {order_sql} LIMIT ? OFFSET ?"
     params.extend([limit, offset])
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
 
-    cursor.execute("SELECT COUNT(*) FROM publicacoes WHERE status IS NOT NULL")
+    # TOTAL CORRETO (mesmo filtro)
+    cursor.execute(
+        "SELECT COUNT(*) FROM publicacoes WHERE status = ?",
+        (status,)
+    )
     total = cursor.fetchone()[0]
 
     conn.close()
@@ -120,7 +121,7 @@ def listar(
                 "frequencia": r[4],
                 "local": r[5],
                 "data_inscricao": r[6],
-                "status": r[7],     # 🟢 NOVO
+                "status": r[7],
                 "fonte": r[8],
                 "link": r[9],
             }
@@ -140,6 +141,3 @@ def atualizar(background_tasks: BackgroundTasks):
 def start_background_tasks():
     init_db()
     iniciar_scrapers()
-
-
-
