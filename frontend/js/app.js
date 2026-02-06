@@ -1,6 +1,4 @@
-const API_BASE = "https://leocode.onrender.com";
-
-fetch(`${API_BASE}/dados?page=1&limit=9`)
+const API_URL = "https://leocode.onrender.com/dados";
 
 
 /* ELEMENTOS */
@@ -247,6 +245,7 @@ btnBuscar.onclick = async () => {
 /* INIT */
 buscarDados();
 carregarHistorico();
+
 
 
 
