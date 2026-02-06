@@ -1,86 +1,105 @@
 import re
 from urllib.parse import urlparse
-PALAVRAS_VALIDAS = [
-    "professor",
-    "docente",
-    "magistério",
-    "educação",
-    "pedagógico",
-    "pedagogia",
-    "ensino",
-    "técnico administrativo",
-    "técnico-administrativo",
-    "tae",
-    "assistente em educação",
-    "técnico em assuntos educacionais",
-    "educacional"
-]
-PALAVRAS_EXCLUIDAS = [
-    "estágio",
-    "bolsa",
-    "pesquisa",
-    "extensão",
-    "residência",
-    "monitoria",
-    "voluntário",
-    "temporário sem vínculo",
-    "curso",
-    "capacitação"
-]
 
-
-KEYWORDS_ABERTOS = [
-    "inscrições abertas",
-    "inscrições até",
-    "período de inscrição",
-    "edital aberto",
-    "concurso aberto",
-    "processo seletivo aberto"
-]
-
-KEYWORDS_PREVISTOS = [
-    "previsto",
-    "concurso previsto",
-    "autorizado",
-    "aguardando edital"
-]
-
-KEYWORDS_IGNORAR = [
-    "encerrado",
-    "resultado",
-    "gabarito",
-    "homologado",
-    "classificação",
-    "convocação",
-    "nomeação",
-    "retificação",
-    "comunicado"
-]
+# ===============================
+# STATUS (PCI REAL)
+# ===============================
 
 def detectar_status(texto: str) -> str | None:
     t = texto.lower()
 
-    if any(p in t for p in KEYWORDS_IGNORAR):
+    # ❌ ignorar resultados e comunicados
+    if any(p in t for p in [
+        "resultado",
+        "gabarito",
+        "homologação",
+        "homologado",
+        "classificação",
+        "convocação",
+        "nomeação",
+        "retificação",
+        "comunicado"
+    ]):
         return None
 
-    if any(p in t for p in KEYWORDS_ABERTOS):
+    # 🟢 ABERTO → padrão PCI
+    if "inscrição até" in t:
         return "aberto"
 
-    if any(p in t for p in KEYWORDS_PREVISTOS):
+    # 🟡 PREVISTO → concurso sem data
+    if any(p in t for p in [
+        "concurso",
+        "processo seletivo",
+        "seleção",
+        "edital",
+        "vagas"
+    ]):
         return "previsto"
 
     return None
+
+
+# ===============================
+# CARGO (SOMENTE OS DESEJADOS)
+# ===============================
+
+def detectar_cargo(texto: str) -> str | None:
+    t = texto.lower()
+
+    # 🎓 PROFESSOR
+    if any(p in t for p in [
+        "professor",
+        "docente",
+        "pedagogo",
+        "educador",
+        "magistério"
+    ]):
+        return "Professor"
+
+    # 🧾 TÉCNICO ADMINISTRATIVO
+    if any(p in t for p in [
+        "técnico administrativo",
+        "tecnico administrativo",
+        "técnico-administrativo",
+        "assistente administrativo",
+        "assistente em educação",
+        "administrativo",
+        "tae"
+    ]):
+        return "Técnico Administrativo"
+
+    # 📦 VÁRIOS CARGOS (PCI)
+    if any(p in t for p in [
+        "vários cargos",
+        "diversos cargos",
+        "cadastro reserva",
+        "cadastro de reserva",
+        "nível médio / técnico / superior",
+        "nível médio e superior",
+        "médio / técnico / superior"
+    ]):
+        return "Vários Cargos"
+
+    return None
+
+
+# ===============================
+# EXTRAÇÕES
+# ===============================
 
 def extrair_salario(texto):
     m = re.search(r"r\$ ?[\d\.]+,\d{2}", texto.lower())
     return m.group(0).upper() if m else "Não informado"
 
+
 def extrair_frequencia(texto):
     m = re.search(r"(20|30|40)\s?h", texto.lower())
     return m.group(0) if m else "Não informado"
 
+
 def extrair_datas(texto):
     return re.findall(r"\d{2}/\d{2}/\d{4}", texto)
+
 
 def extrair_local(texto):
     estados = [
@@ -96,13 +115,10 @@ def extrair_local(texto):
             return e.title()
     return "Não informado"
 
-def detectar_cargo(texto):
-    t = texto.lower()
-    if any(p in t for p in ["professor","docente","pedagogo","educador","tutor"]):
-        return "Professor"
-    if any(p in t for p in ["administrativo","técnico administrativo","assistente"]):
-        return "Administrativo"
-    return "Educação"
+
+# ===============================
+# ÂMBITO
+# ===============================
 
 def detectar_ambito_por_link(link: str | None) -> str | None:
     if not link:
@@ -113,33 +129,17 @@ def detectar_ambito_por_link(link: str | None) -> str | None:
     except:
         return None
 
-    # FEDERAL
     if dominio.endswith("gov.br") or ".edu.br" in dominio:
         return "Federal"
 
-    # ESTADUAL (ex: sp.gov.br, mg.gov.br)
     if dominio.count(".gov.br") == 2:
         return "Estadual"
 
-    # MUNICIPAL
-    if any(p in dominio for p in [
-        "prefeitura",
-        "municipio",
-        "municipal"
-    ]):
+    if any(p in dominio for p in ["prefeitura", "municipio", "municipal"]):
         return "Municipal"
 
     return None
-def edital_relevante(texto: str) -> bool:
-    t = texto.lower()
 
-    if any(p in t for p in PALAVRAS_EXCLUIDAS):
-        return False
-
-    if any(p in t for p in PALAVRAS_VALIDAS):
-        return True
-
-    return False
 
 def detectar_ambito(instituicao: str, link: str | None = None) -> str:
     ambito_link = detectar_ambito_por_link(link)
@@ -166,6 +166,4 @@ def detectar_ambito(instituicao: str, link: str | None = None) -> str:
     if "prefeitura" in inst:
         return "Municipal"
 
-    # 🔚 FALLBACK FINAL (PCI → Federal)
     return "Federal"
-
