@@ -24,37 +24,22 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
 
-
-# ===============================
-# UTIL
-# ===============================
-
 def limpar_texto(t):
     return re.sub(r"\s+", " ", t).strip()
-
 
 def normalizar_link(href: str) -> str | None:
     if not href:
         return None
-
     href = href.strip()
-
     if href.startswith("https//"):
         href = href.replace("https//", "https://", 1)
-
-    if href.startswith("http://") or href.startswith("https://"):
+    if href.startswith("http"):
         return href
-
     if href.startswith("/"):
         return BASE_URL + href
-
     return None
 
-
-# ===============================
 # LIMPEZA DO BANCO
-# ===============================
-
 def limpar_publicacoes(cursor):
     cursor.execute("""
         DELETE FROM publicacoes
@@ -72,16 +57,10 @@ def limpar_publicacoes(cursor):
             )
     """)
 
-
-# ===============================
-# SCRAPER
-# ===============================
-
 def rodar():
     conn = sqlite3.connect("dados.db")
     cursor = conn.cursor()
 
-    # 🧹 LIMPEZA ANTES DE INSERIR
     limpar_publicacoes(cursor)
     conn.commit()
 
@@ -89,26 +68,21 @@ def rodar():
 
     for url in URLS:
         print(f"🔍 Acessando: {url}")
-
         r = requests.get(url, headers=HEADERS, timeout=30)
         r.raise_for_status()
 
         soup = BeautifulSoup(r.text, "lxml")
         blocos = soup.select(".ca")
 
-        print(f"📦 Blocos encontrados: {len(blocos)}")
-
         for bloco in blocos:
             texto = limpar_texto(bloco.get_text(" ", strip=True))
             if len(texto) < 40:
                 continue
 
-            # 🔒 STATUS (DATA VALIDA)
             status = detectar_status(texto)
             if not status:
                 continue
 
-            # 🔒 CARGO
             cargo = detectar_cargo(texto)
             if not cargo:
                 continue
@@ -121,11 +95,10 @@ def rodar():
             if not link:
                 continue
 
-            # evita duplicidade
-            cursor.execute(
-                "SELECT 1 FROM publicacoes WHERE link = ?",
-                (link,)
-            )
+            if "/noticias/" in link:
+                continue
+
+            cursor.execute("SELECT 1 FROM publicacoes WHERE link = ?", (link,))
             if cursor.fetchone():
                 continue
 
