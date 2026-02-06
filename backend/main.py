@@ -1,12 +1,14 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .init_db import init_db
-
+from fastapi import BackgroundTasks
 import sqlite3
+
+from .init_db import init_db
+from .runner import iniciar_scrapers
 
 app = FastAPI(title="Alerta de Concursos API")
 
-# CORS (frontend local)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -31,11 +33,13 @@ def salario_num(v):
     except:
         return 0
 
+
 @app.get("/dados")
 def listar(
     q: str = "",
     ambito: str = "",
     cargo: str = "",
+    status: str = "",          # 🟢 NOVO
     salario_min: int = 0,
     ordenacao: str = "",
     page: int = 1,
@@ -65,8 +69,16 @@ def listar(
 
     query = f"""
         SELECT
-            instituicao, cargo, ambito, salario, frequencia,
-            local, data_inscricao, fonte, link
+            instituicao,
+            cargo,
+            ambito,
+            salario,
+            frequencia,
+            local,
+            data_inscricao,
+            status,
+            fonte,
+            link
         FROM publicacoes
         WHERE 1=1
     """
@@ -84,13 +96,17 @@ def listar(
         query += " AND cargo = ?"
         params.append(cargo)
 
+    if status:
+        query += " AND status = ?"
+        params.append(status)
+
     query += f" ORDER BY {order_sql} LIMIT ? OFFSET ?"
     params.extend([limit, offset])
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
 
-    cursor.execute("SELECT COUNT(*) FROM publicacoes")
+    cursor.execute("SELECT COUNT(*) FROM publicacoes WHERE status IS NOT NULL")
     total = cursor.fetchone()[0]
 
     conn.close()
@@ -108,27 +124,23 @@ def listar(
                 "frequencia": r[4],
                 "local": r[5],
                 "data_inscricao": r[6],
-                "fonte": r[7],
-                "link": r[8],
+                "status": r[7],     # 🟢 NOVO
+                "fonte": r[8],
+                "link": r[9],
             }
             for r in rows
             if salario_num(r[3]) >= salario_min
         ]
     }
-from .runner import iniciar_scrapers
 
-from fastapi import BackgroundTasks
 
 @app.post("/atualizar")
 def atualizar(background_tasks: BackgroundTasks):
     background_tasks.add_task(iniciar_scrapers)
     return {"status": "Atualização iniciada"}
 
+
 @app.on_event("startup")
 def start_background_tasks():
     init_db()
     iniciar_scrapers()
-
-
-
-
