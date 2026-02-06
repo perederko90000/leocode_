@@ -1,10 +1,11 @@
 import re
 from urllib.parse import urlparse
+from datetime import datetime
+
 
 # ===============================
-# STATUS (PCI REAL)
+# STATUS (PCI DEFINITIVO)
 # ===============================
-from datetime import datetime
 
 def detectar_status(texto: str) -> str | None:
     t = texto.lower()
@@ -25,19 +26,22 @@ def detectar_status(texto: str) -> str | None:
 
     hoje = datetime.today().date()
 
-    # 🟢 / ❌ procurar EXPLICITAMENTE "inscrição até"
+    # 🟢 ABERTO → somente se existir "inscrição até" com data futura
     m = re.search(r"inscri[cç][aã]o até[: ]+(\d{2}/\d{2}/\d{4})", t)
     if m:
         try:
             data_fim = datetime.strptime(m.group(1), "%d/%m/%Y").date()
             if data_fim >= hoje:
                 return "aberto"
-            else:
-                return None  # ⛔ inscrição vencida
+            return None
         except:
             return None
 
-    # 🟡 PREVISTO → SOMENTE se NÃO EXISTE data de inscrição
+    # ❌ se existir QUALQUER data mas não for inscrição → ignorar
+    if re.search(r"\d{2}/\d{2}/\d{4}", t):
+        return None
+
+    # 🟡 PREVISTO → somente se NÃO existir data nenhuma
     if any(p in t for p in [
         "concurso",
         "processo seletivo",
@@ -57,17 +61,9 @@ def detectar_status(texto: str) -> str | None:
 def detectar_cargo(texto: str) -> str | None:
     t = texto.lower()
 
-    # 🎓 PROFESSOR
-    if any(p in t for p in [
-        "professor",
-        "docente",
-        "pedagogo",
-        "educador",
-        "magistério"
-    ]):
+    if any(p in t for p in ["professor", "docente", "pedagogo", "educador", "magistério"]):
         return "Professor"
 
-    # 🧾 TÉCNICO ADMINISTRATIVO
     if any(p in t for p in [
         "técnico administrativo",
         "tecnico administrativo",
@@ -79,7 +75,6 @@ def detectar_cargo(texto: str) -> str | None:
     ]):
         return "Técnico Administrativo"
 
-    # 📦 VÁRIOS CARGOS (PCI)
     if any(p in t for p in [
         "vários cargos",
         "diversos cargos",
@@ -112,21 +107,6 @@ def extrair_datas(texto):
     return re.findall(r"\d{2}/\d{2}/\d{4}", texto)
 
 
-def extrair_local(texto):
-    estados = [
-        "acre","alagoas","amapá","amazonas","bahia","ceará","distrito federal",
-        "espírito santo","goiás","maranhão","mato grosso","mato grosso do sul",
-        "minas gerais","pará","paraíba","paraná","pernambuco","piauí",
-        "rio de janeiro","rio grande do norte","rio grande do sul",
-        "rondônia","roraima","santa catarina","são paulo","sergipe","tocantins"
-    ]
-    t = texto.lower()
-    for e in estados:
-        if e in t:
-            return e.title()
-    return "Não informado"
-
-
 # ===============================
 # ÂMBITO
 # ===============================
@@ -134,7 +114,6 @@ def extrair_local(texto):
 def detectar_ambito_por_link(link: str | None) -> str | None:
     if not link:
         return None
-
     try:
         dominio = urlparse(link).netloc.lower()
     except:
@@ -178,6 +157,3 @@ def detectar_ambito(instituicao: str, link: str | None = None) -> str:
         return "Municipal"
 
     return "Federal"
-
-
-
