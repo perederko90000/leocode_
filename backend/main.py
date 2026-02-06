@@ -5,9 +5,16 @@ import sqlite3
 from .init_db import init_db
 from .runner import iniciar_scrapers
 
+# ===============================
+# APP
+# ===============================
+
 app = FastAPI(title="Alerta de Concursos API")
 
-# 🔒 CORS — DEFINITIVO
+# ===============================
+# CORS (DEFINITIVO)
+# ===============================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -21,10 +28,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔎 TESTE DE VIDA (IMPORTANTE)
+# ===============================
+# HEALTH CHECK (OBRIGATÓRIO)
+# ===============================
+
 @app.get("/ping")
 def ping():
     return {"status": "ok"}
+
+# ===============================
+# HELPERS
+# ===============================
 
 def salario_num(v):
     try:
@@ -37,13 +51,16 @@ def salario_num(v):
     except:
         return 0
 
+# ===============================
+# API
+# ===============================
 
 @app.get("/dados")
 def listar(
     q: str = "",
     ambito: str = "",
     cargo: str = "",
-    status: str = "aberto",   # 🔒 default = aberto
+    status: str = "aberto",   # 🔒 padrão
     salario_min: int = 0,
     ordenacao: str = "",
     page: int = 1,
@@ -54,7 +71,7 @@ def listar(
     conn = sqlite3.connect("dados.db")
     cursor = conn.cursor()
 
-    # ORDENACAO
+    # ordenação
     order_sql = "created_at DESC"
 
     if ordenacao == "salario":
@@ -72,7 +89,6 @@ def listar(
             END ASC
         """
 
-    # QUERY BASE (STATUS APLICADO)
     query = """
         SELECT
             instituicao,
@@ -108,7 +124,6 @@ def listar(
     cursor.execute(query, params)
     rows = cursor.fetchall()
 
-    # TOTAL CORRETO (mesmo filtro)
     cursor.execute(
         "SELECT COUNT(*) FROM publicacoes WHERE status = ?",
         (status,)
@@ -139,15 +154,20 @@ def listar(
         ]
     }
 
+# ===============================
+# ATUALIZAÇÃO MANUAL
+# ===============================
 
 @app.post("/atualizar")
 def atualizar(background_tasks: BackgroundTasks):
     background_tasks.add_task(iniciar_scrapers)
     return {"status": "Atualização iniciada"}
 
+# ===============================
+# STARTUP
+# ===============================
 
 @app.on_event("startup")
-def start_background_tasks():
+def startup():
     init_db()
     iniciar_scrapers()
-
