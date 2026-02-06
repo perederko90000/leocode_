@@ -11,17 +11,12 @@ app = FastAPI(title="Alerta de Concursos API")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://leocode.vercel.app",
-        "http://leocode-fnpg.vercel.app",
-        "https://leocode-fnpg.vercel.app",
-        "http://localhost:5500",
-        "http://127.0.0.1:5500",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 def salario_num(v):
     try:
@@ -145,5 +140,6 @@ def atualizar(background_tasks: BackgroundTasks):
 def start_background_tasks():
     init_db()
     iniciar_scrapers()
+
 
 
