@@ -14,9 +14,11 @@ from ..parser import (
 
 BASE_URL = "https://www.pciconcursos.com.br"
 URLS = [
+    "https://www.pciconcursos.com.br/concursos/"
     "https://www.pciconcursos.com.br/concursos/educacao/",
     "https://www.pciconcursos.com.br/concursos/administracao/"
 ]
+
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
@@ -133,3 +135,4 @@ def rodar():
 
 if __name__ == "__main__":
     rodar()
+
