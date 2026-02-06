@@ -9,7 +9,7 @@ from datetime import datetime
 def detectar_status(texto: str) -> str | None:
     t = texto.lower()
 
-    # ❌ ignorar resultados e comunicados
+    # ❌ descartes absolutos
     if any(p in t for p in [
         "resultado",
         "gabarito",
@@ -23,20 +23,33 @@ def detectar_status(texto: str) -> str | None:
     ]):
         return None
 
-    # 🟢 ABERTO → verificar data de inscrição
-    if "inscrição até" in t:
-        datas = re.findall(r"\d{2}/\d{2}/\d{4}", t)
-        if datas:
-            try:
-                data_fim = datetime.strptime(datas[0], "%d/%m/%Y").date()
-                hoje = datetime.today().date()
+    # 🔎 extrair datas
+    datas = re.findall(r"\d{2}/\d{2}/\d{4}", t)
 
-                if data_fim >= hoje:
-                    return "aberto"
-                else:
-                    return None  # ⛔ inscrição vencida
-            except:
-                return None
+    # 🟢 / ❌ SE TEM DATA → decidir aqui
+    if datas:
+        try:
+            data_fim = datetime.strptime(datas[0], "%d/%m/%Y").date()
+            hoje = datetime.today().date()
+
+            if data_fim >= hoje:
+                return "aberto"
+            else:
+                return None  # ⛔ data vencida → IGNORA SEM VIRAR PREVISTO
+        except:
+            return None
+
+    # 🟡 PREVISTO → SOMENTE SE NÃO EXISTE DATA
+    if any(p in t for p in [
+        "concurso",
+        "processo seletivo",
+        "seleção",
+        "edital",
+        "vagas"
+    ]):
+        return "previsto"
+
+    return None
 
     # 🟡 PREVISTO → concurso sem data
     if any(p in t for p in [
@@ -180,4 +193,5 @@ def detectar_ambito(instituicao: str, link: str | None = None) -> str:
         return "Municipal"
 
     return "Federal"
+
 
