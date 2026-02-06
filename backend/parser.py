@@ -2,9 +2,6 @@ import re
 from urllib.parse import urlparse
 from datetime import datetime
 
-# ===============================
-# STATUS (PCI DEFINITIVO)
-# ===============================
 
 def detectar_status(texto: str) -> str | None:
     t = texto.lower()
@@ -46,10 +43,6 @@ def detectar_status(texto: str) -> str | None:
     return None
 
 
-# ===============================
-# CARGO (SÓ OS DESEJADOS)
-# ===============================
-
 def detectar_cargo(texto: str) -> str | None:
     t = texto.lower()
 
@@ -71,10 +64,7 @@ def detectar_cargo(texto: str) -> str | None:
         "vários cargos",
         "diversos cargos",
         "cadastro reserva",
-        "cadastro de reserva",
-        "nível médio / técnico / superior",
-        "nível médio e superior",
-        "médio / técnico / superior"
+        "cadastro de reserva"
     ]):
         return "Vários Cargos"
 
@@ -146,3 +136,4 @@ def detectar_ambito(instituicao: str, link: str | None = None) -> str:
         return "Municipal"
 
     return "Federal"
+
