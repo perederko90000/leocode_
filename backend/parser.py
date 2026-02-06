@@ -2,7 +2,6 @@ import re
 from urllib.parse import urlparse
 from datetime import datetime
 
-
 # ===============================
 # STATUS (PCI DEFINITIVO)
 # ===============================
@@ -11,7 +10,6 @@ def detectar_status(texto: str) -> str | None:
     t = texto.lower()
     hoje = datetime.today().date()
 
-    # ❌ descartes absolutos
     if any(p in t for p in [
         "resultado",
         "gabarito",
@@ -25,25 +23,17 @@ def detectar_status(texto: str) -> str | None:
     ]):
         return None
 
-    # 🔎 extrair TODAS as datas
     datas = re.findall(r"\d{2}/\d{2}/\d{4}", t)
 
     if datas:
         try:
-            # pega a MAIOR data (pra evitar data antiga de publicação)
-            data_fim = max(
-                datetime.strptime(d, "%d/%m/%Y").date()
-                for d in datas
-            )
-
+            data_fim = max(datetime.strptime(d, "%d/%m/%Y").date() for d in datas)
             if data_fim >= hoje:
                 return "aberto"
-            else:
-                return None
+            return None
         except:
             return None
 
-    # 🟡 PREVISTO → somente se NÃO existir data nenhuma
     if any(p in t for p in [
         "concurso",
         "processo seletivo",
@@ -57,7 +47,7 @@ def detectar_status(texto: str) -> str | None:
 
 
 # ===============================
-# CARGO (SOMENTE OS DESEJADOS)
+# CARGO (SÓ OS DESEJADOS)
 # ===============================
 
 def detectar_cargo(texto: str) -> str | None:
@@ -123,10 +113,8 @@ def detectar_ambito_por_link(link: str | None) -> str | None:
 
     if dominio.endswith("gov.br") or ".edu.br" in dominio:
         return "Federal"
-
     if dominio.count(".gov.br") == 2:
         return "Estadual"
-
     if any(p in dominio for p in ["prefeitura", "municipio", "municipal"]):
         return "Municipal"
 
@@ -143,8 +131,7 @@ def detectar_ambito(instituicao: str, link: str | None = None) -> str:
     if any(p in inst for p in [
         "ministério", "mec", "fnde", "inep",
         "instituto federal", "universidade federal",
-        "if ", "if-", "ines", "enap",
-        "exército", "marinha", "aeronáutica",
+        "if ", "if-", "enap",
         "conselho federal"
     ]):
         return "Federal"
@@ -159,4 +146,3 @@ def detectar_ambito(instituicao: str, link: str | None = None) -> str:
         return "Municipal"
 
     return "Federal"
-
