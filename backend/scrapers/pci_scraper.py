@@ -9,21 +9,25 @@ from ..parser import (
     detectar_cargo,
     detectar_ambito,
     extrair_datas,
-    detectar_status  # 🔒 NOVO: filtro de abertos / previstos
+    detectar_status
 )
 
 BASE_URL = "https://www.pciconcursos.com.br"
+
 URLS = [
     "https://www.pciconcursos.com.br/concursos/#SP",
     "https://www.pciconcursos.com.br/concursos/educacao/",
     "https://www.pciconcursos.com.br/concursos/administracao/",
 ]
 
-
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
 
+
+# ===============================
+# UTIL
+# ===============================
 
 def limpar_texto(t):
     return re.sub(r"\s+", " ", t).strip()
@@ -47,9 +51,39 @@ def normalizar_link(href: str) -> str | None:
     return None
 
 
+# ===============================
+# LIMPEZA DO BANCO
+# ===============================
+
+def limpar_publicacoes(cursor):
+    cursor.execute("""
+        DELETE FROM publicacoes
+        WHERE
+            status IS NULL
+            OR status NOT IN ('aberto', 'previsto')
+            OR (
+                status = 'aberto'
+                AND data_inscricao IS NOT NULL
+                AND date(
+                    substr(data_inscricao, 7, 4) || '-' ||
+                    substr(data_inscricao, 4, 2) || '-' ||
+                    substr(data_inscricao, 1, 2)
+                ) < date('now')
+            )
+    """)
+
+
+# ===============================
+# SCRAPER
+# ===============================
+
 def rodar():
     conn = sqlite3.connect("dados.db")
     cursor = conn.cursor()
+
+    # 🧹 LIMPEZA ANTES DE INSERIR
+    limpar_publicacoes(cursor)
+    conn.commit()
 
     inseridos = 0
 
@@ -69,11 +103,15 @@ def rodar():
             if len(texto) < 40:
                 continue
 
-            # 🔒 FILTRO PRINCIPAL (parser decide)
+            # 🔒 STATUS (DATA VALIDA)
             status = detectar_status(texto)
             if not status:
-             continue
+                continue
 
+            # 🔒 CARGO
+            cargo = detectar_cargo(texto)
+            if not cargo:
+                continue
 
             a = bloco.find("a", href=True)
             if not a:
@@ -91,10 +129,9 @@ def rodar():
             if cursor.fetchone():
                 continue
 
-            salario = extrair_salario(texto) or "Não informado"
-            frequencia = extrair_frequencia(texto) or "Não informado"
-            cargo = detectar_cargo(texto)
-            ambito = detectar_ambito(texto)
+            salario = extrair_salario(texto)
+            frequencia = extrair_frequencia(texto)
+            ambito = detectar_ambito(texto, link)
             datas = extrair_datas(texto)
 
             data_inscricao = datas[0] if datas else None
@@ -109,9 +146,10 @@ def rodar():
                     frequencia,
                     local,
                     data_inscricao,
+                    status,
                     fonte,
                     link
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 instituicao,
                 cargo,
@@ -120,12 +158,13 @@ def rodar():
                 frequencia,
                 None,
                 data_inscricao,
+                status,
                 "PCI Concursos",
                 link
             ))
 
             inseridos += 1
-            print("✅ Inserido:", instituicao[:80])
+            print(f"✅ [{status}] [{cargo}] {instituicao[:60]}")
 
         conn.commit()
 
@@ -135,6 +174,3 @@ def rodar():
 
 if __name__ == "__main__":
     rodar()
-
-
-
