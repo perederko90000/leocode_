@@ -1,99 +1,151 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8" />
-    <title>Alerta de Concursos - Educação</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <title>Alerta de Concursos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Tailwind (ok para MVP) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont;
+    }
+  </style>
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-gray-100 text-gray-800">
 
-    <!-- HEADER -->
-    <header class="bg-white shadow">
-        <div class="max-w-6xl mx-auto px-6 py-4">
-            <h1 class="text-2xl font-bold"> Alerta de Concursos – Educação</h1>
-            <p class="text-gray-500 text-sm">Busca inteligente com histórico</p>
+  <!-- HEADER -->
+  <header class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-5">
+      <h1 class="text-2xl font-bold text-gray-900">
+         Alerta de Concursos
+      </h1>
+      <p class="text-sm text-gray-500">
+        Concursos abertos e previstos • Educação e Administração
+      </p>
+    </div>
+  </header>
+
+  <!-- FILTROS -->
+  <section class="max-w-7xl mx-auto px-6 mt-6">
+    <div class="bg-white rounded-xl shadow p-5">
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+
+        <!-- BUSCA -->
+        <div class="md:col-span-2">
+          <label class="text-xs font-semibold text-gray-600">
+            Buscar
+          </label>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Buscar concurso..."
+            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
         </div>
-    </header>
 
-    <!-- BARRA DE BUSCA (FORA DO GRID) -->
-    <section class="max-w-6xl mx-auto px-6 mt-6">
-        <div class="bg-white px-4 py-3 rounded-lg shadow">
-
-            <div class="flex flex-wrap gap-2 items-center">
-
-                <input id="searchInput" type="text" placeholder="Buscar instituição, cargo ou edital"
-                    class="flex-1 min-w-[220px] border rounded-md px-3 py-2 text-sm">
-
-                <select id="ambitoFilter" class="border rounded-md px-2 py-2 text-sm">
-                    <option value="">Âmbito</option>
-                    <option>Municipal</option>
-                    <option>Estadual</option>
-                    <option>Federal</option>
-                    <option>PCI Concursos</option>
-                </select>
-
-                <select id="frequenciaFilter" class="border rounded-md px-2 py-2 text-sm">
-                    <option value="">Carga</option>
-                    <option value="20">20h</option>
-                    <option value="30">30h</option>
-                    <option value="40">40h</option>
-                </select>
-                <select id="cargoFilter" class="border rounded-md px-2 py-2 text-sm">
-                    <option value="">Cargo</option>
-                    <option value="professor">Professor</option>
-                    <option value="tecnico">Técnico</option>
-                    <option value="administrativo">Administrativo</option>
-                </select>
-
-                <input id="salarioMin" type="number" placeholder="R$ mín"
-                    class="border rounded-md px-2 py-2 text-sm w-28">
-
-                <select id="ordenacao" class="border rounded-md px-2 py-2 text-sm">
-                    <option value="">Ordenar</option>
-                    <option value="salario">↑ Salário</option>
-                    <option value="frequencia">↓ Carga</option>
-                </select>
-
-                <button id="btnBuscar" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">
-                    Buscar
-                </button>
-
-            </div>
+        <!-- CARGO -->
+        <div>
+          <label class="text-xs font-semibold text-gray-600">
+            Cargo
+          </label>
+          <select
+            id="cargoFilter"
+            class="mt-1 w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">Todos os cargos</option>
+            <option value="Professor">Professor</option>
+            <option value="Técnico Administrativo">Técnico Administrativo</option>
+            <option value="Vários Cargos">Vários Cargos</option>
+          </select>
         </div>
-    </section>
 
-    <!-- CONTEÚDO -->
-    <main class="max-w-6xl mx-auto px-6 mt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-        <template id="skeleton">
-            <div class="bg-white p-5 rounded-lg shadow animate-pulse space-y-3">
-                <div class="h-4 bg-gray-300 rounded w-3/4"></div>
-                <div class="h-3 bg-gray-200 rounded w-1/2"></div>
-                <div class="h-3 bg-gray-200 rounded w-1/3"></div>
-            </div>
-        </template>
+        <!-- ÂMBITO -->
+        <div>
+          <label class="text-xs font-semibold text-gray-600">
+            Âmbito
+          </label>
+          <select
+            id="ambitoFilter"
+            class="mt-1 w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">Todos os âmbitos</option>
+            <option value="Federal">Federal</option>
+            <option value="Estadual">Estadual</option>
+            <option value="Municipal">Municipal</option>
+          </select>
+        </div>
 
-        <!-- RESULTADOS -->
-        <section class="md:col-span-3">
-            <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <!-- STATUS -->
+        <div>
+          <label class="text-xs font-semibold text-gray-600">
+            Status
+          </label>
+          <select
+            id="statusFilter"
+            class="mt-1 w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="aberto">Abertos</option>
+            <option value="previsto">Previstos</option>
+          </select>
+        </div>
 
-            <div id="paginacao" class="flex gap-2 justify-center mt-8 flex-wrap"></div>
-        </section>
+        <!-- SALÁRIO -->
+        <div>
+          <label class="text-xs font-semibold text-gray-600">
+            Salário mínimo
+          </label>
+          <input
+            id="salarioMin"
+            type="number"
+            placeholder="R$"
+            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+        </div>
 
-        <!-- HISTÓRICO -->
-        <aside class="bg-white p-4 rounded-lg shadow h-fit">
-            <h2 class="font-semibold mb-3 flex items-center gap-2">
-                🕒 Histórico
-            </h2>
-            <ul id="historico" class="text-sm space-y-2"></ul>
-        </aside>
+        <!-- BOTÃO -->
+        <div>
+          <button
+            id="btnBuscar"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition"
+          >
+            Buscar
+          </button>
+        </div>
 
-    </main>
+      </div>
+    </div>
+  </section>
 
-   <script src="frontend/js/app.js"></script>
+  <!-- RESULTADOS -->
+  <main class="max-w-7xl mx-auto px-6 mt-8">
+
+    <!-- CARDS -->
+    <div
+      id="cards"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+    ></div>
+
+    <!-- PAGINAÇÃO -->
+    <div
+      id="pagination"
+      class="flex justify-center gap-2 mt-10 flex-wrap"
+    ></div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="mt-16 border-t bg-white">
+    <div class="max-w-7xl mx-auto px-6 py-6 text-sm text-gray-500 text-center">
+      © 2026 • Alerta de Concursos • Dados públicos
+    </div>
+  </footer>
+
+  <!-- JS -->
+  <script src="frontend/js/app.js"></script>
 
 </body>
-
-
 </html>
