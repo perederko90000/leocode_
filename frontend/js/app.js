@@ -1,4 +1,4 @@
-const API_BASE = "https://leocode.onrender.com/dados";
+const API_BASE = "https://leocode.onrender.com";
 
 
 let currentPage = 1;
@@ -180,6 +180,7 @@ searchInput.addEventListener("keydown", e => {
    INIT
 ================================ */
 buscarDados();
+
 
 
 
