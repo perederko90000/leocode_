@@ -1,8 +1,8 @@
 const API_BASE = "https://leocode.onrender.com";
 
-
 let currentPage = 1;
 const limit = 9;
+let debounceTimer;
 
 /* ===============================
    ELEMENTOS
@@ -16,11 +16,30 @@ const btnBuscar = document.getElementById("btnBuscar");
 
 const cardsContainer = document.getElementById("cards");
 const paginationContainer = document.getElementById("pagination");
-
 const skeletonTemplate = document.getElementById("skeleton");
 
 /* ===============================
-   BUSCA PRINCIPAL
+   FAVORITOS
+================================ */
+function getFavoritos() {
+  return JSON.parse(localStorage.getItem("favoritos") || "[]");
+}
+
+function toggleFavorito(link) {
+  let favs = getFavoritos();
+
+  if (favs.includes(link)) {
+    favs = favs.filter(f => f !== link);
+  } else {
+    favs.push(link);
+  }
+
+  localStorage.setItem("favoritos", JSON.stringify(favs));
+  buscarDados(currentPage);
+}
+
+/* ===============================
+   BUSCA
 ================================ */
 async function buscarDados(page = 1) {
   currentPage = page;
@@ -33,29 +52,26 @@ async function buscarDados(page = 1) {
     cargo: cargoFilter.value,
     ambito: ambitoFilter.value,
     status: statusFilter.value,
-    salario_min: salarioMinInput.value || 0,
+    salario_min: salarioMinInput.value || 0
   });
 
-  const url = `${API_BASE}/dados?${params.toString()}`;
-
   try {
-    const res = await fetch(url);
+    const res = await fetch(`${API_BASE}/dados?${params.toString()}`);
     const data = await res.json();
 
     renderCards(data.results);
     renderPagination(data.page, data.total, data.limit);
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
     cardsContainer.innerHTML = `
       <p class="col-span-full text-center text-red-500">
-        Erro ao carregar concursos
+        Erro ao carregar dados
       </p>
     `;
   }
 }
 
 /* ===============================
-   RENDERIZAÇÃO DOS CARDS
+   RENDER CARDS
 ================================ */
 function renderCards(lista) {
   cardsContainer.innerHTML = "";
@@ -69,21 +85,21 @@ function renderCards(lista) {
     return;
   }
 
+  const favoritos = getFavoritos();
+
   lista.forEach(item => {
     const salarioNum =
       parseInt((item.salario || "").replace(/\D/g, "")) || 0;
 
-    const emAlta = salarioNum >= 800000;
+    if (salarioNum < (salarioMinInput.value || 0) * 100) return;
 
-    const statusBadge =
-      item.status === "aberto"
-        ? `<span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">🟢 Aberto</span>`
-        : `<span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">🟡 Previsto</span>`;
+    const emAlta = salarioNum >= 800000;
+    const isFav = favoritos.includes(item.link);
 
     const card = document.createElement("div");
     card.className = `
       bg-white p-4 rounded-xl shadow
-      transition-all duration-300 ease-out
+      transition-all duration-300
       hover:-translate-y-1 hover:shadow-lg
       opacity-0 animate-fadeIn
       flex flex-col justify-between
@@ -91,13 +107,19 @@ function renderCards(lista) {
 
     card.innerHTML = `
       <div class="space-y-2">
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          ${statusBadge}
-          ${
-            emAlta
-              ? `<span class="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">🔥 Em alta</span>`
-              : ""
-          }
+        <div class="flex flex-wrap gap-2 items-center">
+          <span class="text-xs px-2 py-1 rounded-full
+            ${item.status === "aberto"
+              ? "bg-green-100 text-green-700"
+              : "bg-yellow-100 text-yellow-700"}">
+            ${item.status === "aberto" ? "🟢 Aberto" : "🟡 Previsto"}
+          </span>
+
+          ${emAlta ? `
+            <span class="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">
+              🔥 Em alta
+            </span>
+          ` : ""}
         </div>
 
         <h3 class="font-semibold text-sm text-gray-900">
@@ -110,13 +132,18 @@ function renderCards(lista) {
         <p class="text-xs text-gray-600">
           <strong>Inscrição até:</strong> ${item.data_inscricao || "—"}
         </p>
+
+        <button
+          onclick="toggleFavorito('${item.link}')"
+          class="text-xs ${isFav ? "text-yellow-600" : "text-gray-400"} hover:underline">
+          ⭐ ${isFav ? "Favorito" : "Favoritar"}
+        </button>
       </div>
 
       <a
         href="${item.link}"
         target="_blank"
-        class="mt-4 block text-center bg-blue-600 text-white text-sm py-2 rounded-lg hover:bg-blue-700 transition"
-      >
+        class="mt-4 block text-center bg-blue-600 text-white text-sm py-2 rounded-lg hover:bg-blue-700 transition">
         Ver edital
       </a>
     `;
@@ -130,7 +157,6 @@ function renderCards(lista) {
 ================================ */
 function renderPagination(page, total, limit) {
   paginationContainer.innerHTML = "";
-
   const totalPages = Math.ceil(total / limit);
   if (totalPages <= 1) return;
 
@@ -147,20 +173,10 @@ function renderPagination(page, total, limit) {
 }
 
 /* ===============================
-   SKELETON LOADING
+   SKELETON
 ================================ */
 function mostrarSkeleton() {
   cardsContainer.innerHTML = "";
-
-  if (!skeletonTemplate) {
-    cardsContainer.innerHTML = `
-      <p class="col-span-full text-center text-gray-400">
-        🔎 Buscando concursos...
-      </p>
-    `;
-    return;
-  }
-
   for (let i = 0; i < limit; i++) {
     const clone = skeletonTemplate.content.cloneNode(true);
     cardsContainer.appendChild(clone);
@@ -172,22 +188,12 @@ function mostrarSkeleton() {
 ================================ */
 btnBuscar.addEventListener("click", () => buscarDados(1));
 
-searchInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") buscarDados(1);
+searchInput.addEventListener("input", () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => buscarDados(1), 400);
 });
 
 /* ===============================
    INIT
 ================================ */
 buscarDados();
-
-
-
-
-
-
-
-
-
-
-
