@@ -5,12 +5,28 @@
   <title>Alerta de Concursos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Tailwind (ok para MVP) -->
+  <!-- Tailwind CDN (ok para MVP) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
+  <!-- Animações -->
   <style>
     body {
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.4s ease forwards;
     }
   </style>
 </head>
@@ -24,21 +40,39 @@
          Alerta de Concursos
       </h1>
       <p class="text-sm text-gray-500">
-        Concursos abertos e previstos • Educação e Administração
+        Apenas concursos abertos ou previstos • Atualização automática
       </p>
     </div>
   </header>
 
+  <!-- HERO -->
+  <section class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+    <div class="max-w-7xl mx-auto px-6 py-16 text-center">
+      <h2 class="text-3xl md:text-4xl font-bold">
+        Encontre concursos certos para você
+      </h2>
+      <p class="mt-4 text-lg text-blue-100">
+        Educação • Professor • Técnico Administrativo
+      </p>
+
+      <button
+        onclick="document.getElementById('searchInput').focus()"
+        class="mt-8 bg-white text-blue-600 font-semibold px-6 py-3 rounded-xl shadow hover:scale-105 transition"
+      >
+        🔍 Buscar concursos agora
+      </button>
+    </div>
+  </section>
+
   <!-- FILTROS -->
-  <section class="max-w-7xl mx-auto px-6 mt-6">
-    <div class="bg-white rounded-xl shadow p-5">
-      <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+  <section class="max-w-7xl mx-auto px-6 -mt-12 relative z-10">
+    <div class="bg-white rounded-2xl shadow p-6">
+
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
 
         <!-- BUSCA -->
         <div class="md:col-span-2">
-          <label class="text-xs font-semibold text-gray-600">
-            Buscar
-          </label>
+          <label class="text-xs font-semibold text-gray-600">Buscar</label>
           <input
             id="searchInput"
             type="text"
@@ -49,9 +83,7 @@
 
         <!-- CARGO -->
         <div>
-          <label class="text-xs font-semibold text-gray-600">
-            Cargo
-          </label>
+          <label class="text-xs font-semibold text-gray-600">Cargo</label>
           <select
             id="cargoFilter"
             class="mt-1 w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -65,9 +97,7 @@
 
         <!-- ÂMBITO -->
         <div>
-          <label class="text-xs font-semibold text-gray-600">
-            Âmbito
-          </label>
+          <label class="text-xs font-semibold text-gray-600">Âmbito</label>
           <select
             id="ambitoFilter"
             class="mt-1 w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -81,9 +111,7 @@
 
         <!-- STATUS -->
         <div>
-          <label class="text-xs font-semibold text-gray-600">
-            Status
-          </label>
+          <label class="text-xs font-semibold text-gray-600">Status</label>
           <select
             id="statusFilter"
             class="mt-1 w-full border rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -95,9 +123,7 @@
 
         <!-- SALÁRIO -->
         <div>
-          <label class="text-xs font-semibold text-gray-600">
-            Salário mínimo
-          </label>
+          <label class="text-xs font-semibold text-gray-600">Salário mínimo</label>
           <input
             id="salarioMin"
             type="number"
@@ -112,7 +138,7 @@
             id="btnBuscar"
             class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition"
           >
-            Buscar
+            🔍 Buscar
           </button>
         </div>
 
@@ -121,12 +147,12 @@
   </section>
 
   <!-- RESULTADOS -->
-  <main class="max-w-7xl mx-auto px-6 mt-8">
+  <main class="max-w-7xl mx-auto px-6 mt-12">
 
     <!-- CARDS -->
     <div
       id="cards"
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
     ></div>
 
     <!-- PAGINAÇÃO -->
@@ -135,10 +161,37 @@
       class="flex justify-center gap-2 mt-10 flex-wrap"
     ></div>
 
+    <!-- SKELETON -->
+    <template id="skeleton">
+      <div class="bg-white p-4 rounded-xl shadow space-y-3 animate-pulse">
+        <div class="h-4 bg-gray-300 rounded w-3/4"></div>
+        <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+        <div class="h-3 bg-gray-200 rounded w-1/3"></div>
+      </div>
+    </template>
+
   </main>
 
+  <!-- CTA FINAL -->
+  <section class="mt-20 bg-white border-t">
+    <div class="max-w-7xl mx-auto px-6 py-14 text-center">
+      <h3 class="text-2xl font-bold">
+        Quer receber alertas exclusivos?
+      </h3>
+      <p class="text-gray-500 mt-2">
+        Em breve: notificações por e-mail e WhatsApp
+      </p>
+
+      <button
+        class="mt-6 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition"
+      >
+        Quero ser avisado
+      </button>
+    </div>
+  </section>
+
   <!-- FOOTER -->
-  <footer class="mt-16 border-t bg-white">
+  <footer class="bg-gray-50 border-t">
     <div class="max-w-7xl mx-auto px-6 py-6 text-sm text-gray-500 text-center">
       © 2026 • Alerta de Concursos • Dados públicos
     </div>
