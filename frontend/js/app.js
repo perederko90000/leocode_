@@ -1,253 +1,185 @@
-const API_URL = "https://leocode.onrender.com/dados";
+const API_BASE = "https://leocode.onrender.com/dados";
 
-
-/* ELEMENTOS */
-const searchInput = document.getElementById("searchInput");
-const ambitoFilter = document.getElementById("ambitoFilter");
-const frequenciaFilter = document.getElementById("frequenciaFilter");
-const cargoFilter = document.getElementById("cargoFilter");
-const salarioMinInput = document.getElementById("salarioMin");
-const ordenacaoSelect = document.getElementById("ordenacao");
-const btnBuscar = document.getElementById("btnBuscar");
-
-const container = document.getElementById("cardsContainer");
-const historicoEl = document.getElementById("historico");
-const paginacaoEl = document.getElementById("paginacao");
 
 let currentPage = 1;
-const LIMIT = 9;
+const limit = 9;
 
-/* ===================== UTIL ===================== */
+/* ===============================
+   ELEMENTOS
+================================ */
+const searchInput = document.getElementById("searchInput");
+const cargoFilter = document.getElementById("cargoFilter");
+const ambitoFilter = document.getElementById("ambitoFilter");
+const statusFilter = document.getElementById("statusFilter");
+const salarioMinInput = document.getElementById("salarioMin");
+const btnBuscar = document.getElementById("btnBuscar");
 
-function salarioNumero(s) {
-    if (!s || s === "Não informado") return 0;
-    return parseInt(
-        s.replace("R$", "")
-            .replace(/\./g, "")
-            .replace(",", "")
-            .trim()
-    ) || 0;
+const cardsContainer = document.getElementById("cards");
+const paginationContainer = document.getElementById("pagination");
+
+const skeletonTemplate = document.getElementById("skeleton");
+
+/* ===============================
+   BUSCA PRINCIPAL
+================================ */
+async function buscarDados(page = 1) {
+  currentPage = page;
+  mostrarSkeleton();
+
+  const params = new URLSearchParams({
+    page,
+    limit,
+    q: searchInput.value.trim(),
+    cargo: cargoFilter.value,
+    ambito: ambitoFilter.value,
+    status: statusFilter.value,
+    salario_min: salarioMinInput.value || 0,
+  });
+
+  const url = `${API_BASE}/dados?${params.toString()}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    renderCards(data.results);
+    renderPagination(data.page, data.total, data.limit);
+  } catch (err) {
+    console.error(err);
+    cardsContainer.innerHTML = `
+      <p class="col-span-full text-center text-red-500">
+        Erro ao carregar concursos
+      </p>
+    `;
+  }
 }
 
-function calcularScore(i) {
-    let score = 0;
-
-    const sal = salarioNumero(i.salario);
-    if (sal >= 8000) score += 40;
-    else if (sal >= 5000) score += 30;
-    else if (sal >= 3000) score += 20;
-    else if (sal > 0) score += 10;
-
-    if (i.cargo === "Professor") score += 20;
-    else if (i.cargo === "Administrativo") score += 15;
-
-    if (i.ambito === "Federal") score += 20;
-    else if (i.ambito === "Estadual") score += 15;
-    else if (i.ambito === "Municipal") score += 10;
-
-    if (i.data_inscricao) score += 10;
-    if (i.link && i.link.startsWith("http")) score += 10;
-
-    return score;
-}
-
-/* ===================== SKELETON ===================== */
-
-function mostrarSkeleton(qtd = 6) {
-    container.innerHTML = "";
-    const tpl = document.getElementById("skeleton");
-    for (let i = 0; i < qtd; i++) {
-        container.appendChild(tpl.content.cloneNode(true));
-    }
-}
-
-/* ===================== BUSCA ===================== */
-
-async function buscarDados(salvarNoHistorico = true) {
-    mostrarSkeleton();
-
-    const params = new URLSearchParams();
-
-    if (searchInput.value) params.append("q", searchInput.value);
-    if (ambitoFilter.value) params.append("ambito", ambitoFilter.value);
-    
-    if (cargoFilter.value) params.append("cargo", cargoFilter.value);
-    if (salarioMinInput.value) params.append("salario_min", salarioMinInput.value);
-
-    params.append("page", currentPage);
-    params.append("limit", LIMIT);
-
-    try {
-        const res = await fetch(`${API_URL}?${params.toString()}`);
-        const data = await res.json();
-
-        console.log("DATA COMPLETA:", data);
-        console.log("RESULTADOS:", data.results);
-       
-
-
-
-        let lista = data.results.map(i => ({
-            ...i,
-            score: calcularScore(i)
-        }));
-
-        /* ORDENAÇÃO */
-        if (ordenacaoSelect.value === "salario") {
-            lista.sort((a, b) => salarioNumero(b.salario) - salarioNumero(a.salario));
-        } else if (ordenacaoSelect.value === "frequencia") {
-            lista.sort((a, b) => (a.frequencia || "").localeCompare(b.frequencia || ""));
-        } else {
-            lista.sort((a, b) => b.score - a.score);
-        }
-
-        renderCards(lista);
-        renderPaginacao(data.total);
-         console.log("LISTA FINAL PARA RENDER:", lista);
-
-        if (salvarNoHistorico) salvarHistorico();
-    } catch (e) {
-        console.error("ERRO REAL:", e);
-        container.innerHTML =
-            "<pre style='color:red'>" + e + "</pre>";
-    }
-}
-
-
-
-/* ===================== CARDS ===================== */
-
+/* ===============================
+   RENDERIZAÇÃO DOS CARDS
+================================ */
 function renderCards(lista) {
-    container.innerHTML = "";
+  cardsContainer.innerHTML = "";
 
-    if (!lista.length) {
-        container.innerHTML =
-            "<p class='text-gray-500'>Nenhum resultado encontrado.</p>";
-        return;
-    }
+  if (!lista || !lista.length) {
+    cardsContainer.innerHTML = `
+      <p class="col-span-full text-center text-gray-500">
+        Nenhum concurso encontrado
+      </p>
+    `;
+    return;
+  }
 
-    lista.forEach((i, index) => {
-        container.innerHTML += `
-        <div class="bg-white p-5 rounded-lg shadow space-y-2">
+  lista.forEach(item => {
+    const salarioNum =
+      parseInt((item.salario || "").replace(/\D/g, "")) || 0;
 
-            ${index === 0 ? `
-            <span class="text-xs font-bold text-purple-700 bg-white-100 px-2 py-1 p-10 m-1 rounded">
-                 Melhor oportunidade
-            </span>` : ""}
+    const emAlta = salarioNum >= 800000;
 
-            ${i.score >= 80 ? `
-            <span class="text-xs font-semibold text-red-700 bg-black-100 px-2 py-1 rounded">
-                Destaque
-            </span>` : ""}
+    const statusBadge =
+      item.status === "aberto"
+        ? `<span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">🟢 Aberto</span>`
+        : `<span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">🟡 Previsto</span>`;
 
-            <h2 class="font-semibold text-sm">${i.instituicao}</h2>
+    const card = document.createElement("div");
+    card.className = `
+      bg-white p-4 rounded-xl shadow
+      transition-all duration-300 ease-out
+      hover:-translate-y-1 hover:shadow-lg
+      opacity-0 animate-fadeIn
+      flex flex-col justify-between
+    `;
 
-            <p class="text-sm"><strong>Cargo:</strong> ${i.cargo}</p>
-            <p class="text-sm"><strong>Salário:</strong> ${i.salario}</p>
-            <p class="text-sm"><strong>Carga Horaria:</strong> ${i.frequencia}</p>
-            <p class="text-sm"><strong>Âmbito:</strong> ${i.ambito}</p>
-
-            ${i.link ? `
-            <a href="${i.link}" target="_blank"
-               class="inline-block text-sm text-blue-600 hover:underline">
-                 Ir ao edital
-            </a>` : ""}
+    card.innerHTML = `
+      <div class="space-y-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          ${statusBadge}
+          ${
+            emAlta
+              ? `<span class="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">🔥 Em alta</span>`
+              : ""
+          }
         </div>
-        `;
-    });
+
+        <h3 class="font-semibold text-sm text-gray-900">
+          ${item.instituicao}
+        </h3>
+
+        <p class="text-xs text-gray-600"><strong>Cargo:</strong> ${item.cargo}</p>
+        <p class="text-xs text-gray-600"><strong>Âmbito:</strong> ${item.ambito}</p>
+        <p class="text-xs text-gray-600"><strong>Salário:</strong> ${item.salario}</p>
+        <p class="text-xs text-gray-600">
+          <strong>Inscrição até:</strong> ${item.data_inscricao || "—"}
+        </p>
+      </div>
+
+      <a
+        href="${item.link}"
+        target="_blank"
+        class="mt-4 block text-center bg-blue-600 text-white text-sm py-2 rounded-lg hover:bg-blue-700 transition"
+      >
+        Ver edital
+      </a>
+    `;
+
+    cardsContainer.appendChild(card);
+  });
 }
 
-/* ===================== PAGINAÇÃO ===================== */
+/* ===============================
+   PAGINAÇÃO
+================================ */
+function renderPagination(page, total, limit) {
+  paginationContainer.innerHTML = "";
 
-function renderPaginacao(total) {
-    const totalPages = Math.ceil(total / LIMIT);
-    paginacaoEl.innerHTML = "";
+  const totalPages = Math.ceil(total / limit);
+  if (totalPages <= 1) return;
 
-    if (totalPages <= 1) return;
-
-    for (let i = 1; i <= totalPages; i++) {
-        paginacaoEl.innerHTML += `
-            <button
-                class="px-3 py-1 border rounded
-                ${i === currentPage ? "bg-blue-600 text-white" : ""}"
-                onclick="trocarPagina(${i})">
-                ${i}
-            </button>
-        `;
-    }
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.className = `
+      px-3 py-1 rounded text-sm border
+      ${i === page ? "bg-blue-600 text-white" : "bg-white"}
+    `;
+    btn.onclick = () => buscarDados(i);
+    paginationContainer.appendChild(btn);
+  }
 }
 
-function trocarPagina(p) {
-    currentPage = p;
-    buscarDados(false);
+/* ===============================
+   SKELETON LOADING
+================================ */
+function mostrarSkeleton() {
+  cardsContainer.innerHTML = "";
+
+  if (!skeletonTemplate) {
+    cardsContainer.innerHTML = `
+      <p class="col-span-full text-center text-gray-400">
+        🔎 Buscando concursos...
+      </p>
+    `;
+    return;
+  }
+
+  for (let i = 0; i < limit; i++) {
+    const clone = skeletonTemplate.content.cloneNode(true);
+    cardsContainer.appendChild(clone);
+  }
 }
 
-/* ===================== HISTÓRICO ===================== */
+/* ===============================
+   EVENTOS
+================================ */
+btnBuscar.addEventListener("click", () => buscarDados(1));
 
-function salvarHistorico() {
-    const texto = searchInput.value;
-    if (!texto) return;
+searchInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") buscarDados(1);
+});
 
-    let hist = JSON.parse(localStorage.getItem("buscas")) || [];
-
-    hist.unshift({
-        texto,
-        ambito: ambitoFilter.value,
-        cargo: cargoFilter.value
-    });
-
-    hist = hist.slice(0, 5);
-    localStorage.setItem("buscas", JSON.stringify(hist));
-    carregarHistorico();
-}
-
-function carregarHistorico() {
-    historicoEl.innerHTML = "";
-
-    (JSON.parse(localStorage.getItem("buscas")) || []).forEach(h => {
-        const li = document.createElement("li");
-        li.textContent = `${h.texto} ${h.ambito ? "• " + h.ambito : ""}`;
-        li.className = "cursor-pointer text-blue-600 hover:underline";
-        li.onclick = () => {
-            searchInput.value = h.texto;
-            ambitoFilter.value = h.ambito;
-            cargoFilter.value = h.cargo;
-            currentPage = 1;
-            buscarDados(false);
-        };
-        historicoEl.appendChild(li);
-    });
-}
-
-/* ===================== EVENTOS ===================== */
-
-btnBuscar.onclick = async () => {
-    currentPage = 1;
-
-    try {
-        
-       await fetch("https://leocode-2.onrender.com/atualizar", {
-   method: "POST"
-       });
-
-        // pequena espera (opcional)
-        setTimeout(() => {
-            buscarDados();
-        }, 2000);
-
-    } catch (e) {
-        console.error("Erro ao atualizar:", e);
-        buscarDados(); // fallback
-    }
-};
-
-
-/* INIT */
+/* ===============================
+   INIT
+================================ */
 buscarDados();
-carregarHistorico();
-
-
-
 
 
 
